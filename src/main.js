@@ -8,7 +8,7 @@ import {
 } from './themes.js';
 import { UndoManager } from './undo/undo-manager.js';
 
-const { invoke, Channel } = window.__TAURI__.core;
+const { invoke } = window.__TAURI__.core;
 const { getCurrentWindow } = window.__TAURI__.window;
 const appWindow = getCurrentWindow();
 
@@ -20,6 +20,8 @@ let animating = false;
 let themes = [];
 let activeTheme = null;
 let undoManager = null;
+let previousNoteShortcut = 'Ctrl+Shift+ArrowLeft';
+let nextNoteShortcut = 'Ctrl+Shift+ArrowRight';
 
 // ── DOM ──
 const canvas = document.getElementById('note-canvas');
@@ -27,9 +29,18 @@ const container = document.getElementById('canvas-container');
 const indicator = document.getElementById('note-indicator');
 const settingsButton = document.getElementById('btn-settings');
 const settingsPanel = document.getElementById('settings-panel');
+const prevNoteButton = document.getElementById('btn-prev-note');
+const nextNoteButton = document.getElementById('btn-next-note');
 
 const importThemeButton = document.getElementById('btn-import-theme');
 const themeFileInput = document.getElementById('theme-file-input');
+const toggleShortcutInput = document.getElementById('toggle-shortcut-input');
+const saveShortcutButton = document.getElementById('btn-save-shortcut');
+const shortcutStatus = document.getElementById('shortcut-status');
+const previousNoteShortcutInput = document.getElementById('previous-note-shortcut-input');
+const nextNoteShortcutInput = document.getElementById('next-note-shortcut-input');
+const saveNoteShortcutsButton = document.getElementById('btn-save-note-shortcuts');
+const noteShortcutsStatus = document.getElementById('note-shortcuts-status');
 // ── Custom Theme Dropdown ──
 const dropdownTrigger = document.getElementById('theme-dropdown-trigger');
 const dropdownPanel = document.getElementById('theme-dropdown-panel');
@@ -152,6 +163,114 @@ function escapeHtml(value) {
     '>': '&gt;',
     '"': '&quot;'
   }[char]));
+}
+
+// ── App Settings ──
+
+async function initAppSettings() {
+  try {
+    const settings = await invoke('get_app_settings');
+    toggleShortcutInput.value = settings.toggle_shortcut || 'Alt+A';
+    previousNoteShortcut = settings.previous_note_shortcut || 'Ctrl+Shift+ArrowLeft';
+    nextNoteShortcut = settings.next_note_shortcut || 'Ctrl+Shift+ArrowRight';
+    previousNoteShortcutInput.value = previousNoteShortcut;
+    nextNoteShortcutInput.value = nextNoteShortcut;
+  } catch (error) {
+    console.error('Could not load settings:', error);
+  }
+}
+
+function normalizeShortcutFromEvent(e) {
+  const parts = [];
+  if (e.ctrlKey) parts.push('Ctrl');
+  if (e.altKey) parts.push('Alt');
+  if (e.shiftKey) parts.push('Shift');
+  if (e.metaKey) parts.push('Super');
+
+  const modifierKeys = new Set(['Control', 'Alt', 'Shift', 'Meta']);
+  if (modifierKeys.has(e.key)) return null;
+
+  let key = e.key;
+  if (key === ' ') key = 'Space';
+  if (key.length === 1) key = key.toUpperCase();
+  if (key.startsWith('Arrow')) key = key;
+
+  parts.push(key);
+  return parts.join('+');
+}
+
+function normalizeShortcutText(value) {
+  return String(value)
+    .split('+')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const upper = part.toUpperCase();
+      if (upper === 'CONTROL' || upper === 'CTRL') return 'Ctrl';
+      if (upper === 'OPTION' || upper === 'ALT') return 'Alt';
+      if (upper === 'SHIFT') return 'Shift';
+      if (upper === 'META' || upper === 'CMD' || upper === 'COMMAND' || upper === 'SUPER') return 'Super';
+      if (upper === 'LEFT') return 'ArrowLeft';
+      if (upper === 'RIGHT') return 'ArrowRight';
+      if (upper === 'UP') return 'ArrowUp';
+      if (upper === 'DOWN') return 'ArrowDown';
+      if (upper === 'SPACE') return 'Space';
+      if (part.length === 1) return part.toUpperCase();
+      return part;
+    })
+    .join('+');
+}
+
+function eventMatchesShortcut(e, shortcut) {
+  return normalizeShortcutFromEvent(e) === normalizeShortcutText(shortcut);
+}
+
+async function saveToggleShortcut() {
+  const shortcut = toggleShortcutInput.value.trim();
+  if (!shortcut) return;
+
+  shortcutStatus.textContent = '';
+  shortcutStatus.classList.remove('error');
+  saveShortcutButton.disabled = true;
+
+  try {
+    const settings = await invoke('set_toggle_shortcut', { shortcut });
+    toggleShortcutInput.value = settings.toggle_shortcut;
+    shortcutStatus.textContent = 'Saved';
+  } catch (error) {
+    console.error('Could not save shortcut:', error);
+    shortcutStatus.textContent = String(error);
+    shortcutStatus.classList.add('error');
+  } finally {
+    saveShortcutButton.disabled = false;
+  }
+}
+
+async function saveNoteShortcuts() {
+  const previousShortcut = normalizeShortcutText(previousNoteShortcutInput.value);
+  const nextShortcut = normalizeShortcutText(nextNoteShortcutInput.value);
+
+  noteShortcutsStatus.textContent = '';
+  noteShortcutsStatus.classList.remove('error');
+  saveNoteShortcutsButton.disabled = true;
+
+  try {
+    const settings = await invoke('set_note_shortcuts', {
+      previousShortcut,
+      nextShortcut
+    });
+    previousNoteShortcut = settings.previous_note_shortcut;
+    nextNoteShortcut = settings.next_note_shortcut;
+    previousNoteShortcutInput.value = previousNoteShortcut;
+    nextNoteShortcutInput.value = nextNoteShortcut;
+    noteShortcutsStatus.textContent = 'Saved';
+  } catch (error) {
+    console.error('Could not save note shortcuts:', error);
+    noteShortcutsStatus.textContent = String(error);
+    noteShortcutsStatus.classList.add('error');
+  } finally {
+    saveNoteShortcutsButton.disabled = false;
+  }
 }
 
 // ── Load & Render ──
@@ -365,66 +484,21 @@ document.addEventListener('keydown', (e) => {
 
   if (e.key === 'Escape') toggleSettings(false);
 
+  if (eventMatchesShortcut(e, nextNoteShortcut)) {
+    e.preventDefault();
+    slideToNext();
+    return;
+  }
+
+  if (eventMatchesShortcut(e, previousNoteShortcut)) {
+    e.preventDefault();
+    slideToPrev();
+    return;
+  }
+
   if (mod && e.shiftKey) {
     if (e.key === ']') { e.preventDefault(); slideToNext(); }
     if (e.key === '[') { e.preventDefault(); slideToPrev(); }
-  }
-});
-
-// ── Updater ──
-
-const updateBtn = document.getElementById('update-btn');
-const updateVersion = document.getElementById('update-version');
-let updateAvailable = null;
-
-async function checkForUpdates() {
-  try {
-    const metadata = await invoke('plugin:updater|check');
-
-    if (metadata) {
-      updateAvailable = metadata;
-      updateBtn.textContent = 'Install Update';
-      updateBtn.classList.add('install');
-      updateVersion.textContent = metadata.version ? `v${metadata.version}` : 'v0.1.0';
-    } else {
-      updateBtn.textContent = 'Up to date';
-      updateBtn.disabled = true;
-      setTimeout(() => {
-        updateBtn.textContent = 'Check for Updates';
-        updateBtn.disabled = false;
-      }, 3000);
-    }
-  } catch (err) {
-    console.error('Update check failed:', err);
-    updateBtn.textContent = 'Could not check';
-    updateBtn.disabled = true;
-    setTimeout(() => {
-      updateBtn.textContent = 'Check for Updates';
-      updateBtn.disabled = false;
-    }, 3000);
-  }
-}
-
-updateBtn?.addEventListener('click', async () => {
-  if (updateAvailable) {
-    try {
-      updateBtn.textContent = 'Installing…';
-      updateBtn.disabled = true;
-      await invoke('plugin:updater|download_and_install', {
-        onEvent: new Channel(),
-        rid: updateAvailable.rid
-      });
-      const { relaunch } = window.__TAURI__.process;
-      await relaunch();
-    } catch (err) {
-      console.error('Update install failed:', err);
-      updateBtn.textContent = 'Install failed';
-      updateBtn.disabled = false;
-      updateBtn.classList.remove('install');
-      updateAvailable = null;
-    }
-  } else {
-    checkForUpdates();
   }
 });
 
@@ -432,6 +506,7 @@ updateBtn?.addEventListener('click', async () => {
 
 window.addEventListener('DOMContentLoaded', () => {
   initThemes();
+  initAppSettings();
   loadNotes();
 
   undoManager = new UndoManager({
@@ -456,6 +531,66 @@ window.addEventListener('DOMContentLoaded', () => {
     const [file] = e.target.files || [];
     if (file) importThemeFile(file);
   });
+
+  prevNoteButton?.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    slideToPrev();
+  });
+
+  nextNoteButton?.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    slideToNext();
+  });
+
+  toggleShortcutInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveToggleShortcut();
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      return;
+    }
+
+    const shortcut = normalizeShortcutFromEvent(e);
+    if (!shortcut) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    toggleShortcutInput.value = shortcut;
+    shortcutStatus.textContent = '';
+    shortcutStatus.classList.remove('error');
+  });
+
+  saveShortcutButton?.addEventListener('click', saveToggleShortcut);
+
+  [previousNoteShortcutInput, nextNoteShortcutInput].forEach((input) => {
+    input?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveNoteShortcuts();
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        return;
+      }
+
+      const shortcut = normalizeShortcutFromEvent(e);
+      if (!shortcut) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      input.value = shortcut;
+      noteShortcutsStatus.textContent = '';
+      noteShortcutsStatus.classList.remove('error');
+    });
+  });
+
+  saveNoteShortcutsButton?.addEventListener('click', saveNoteShortcuts);
 
   document.getElementById('btn-minimize')?.addEventListener('mousedown', (e) => {
     e.stopPropagation();

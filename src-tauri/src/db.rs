@@ -27,9 +27,7 @@ impl Database {
         conn.execute_batch("PRAGMA journal_mode=WAL;")?;
 
         // Check if old single-note schema exists (no position column)
-        let has_position: bool = conn
-            .prepare("SELECT position FROM notes LIMIT 0")
-            .is_ok();
+        let has_position: bool = conn.prepare("SELECT position FROM notes LIMIT 0").is_ok();
 
         if !has_position {
             // Old schema or fresh — migrate/create
@@ -45,12 +43,10 @@ impl Database {
             if table_exists {
                 // Migrate old single-note table: add position column, backfill
                 conn.execute_batch(
-                    "ALTER TABLE notes ADD COLUMN position INTEGER NOT NULL DEFAULT 0;"
+                    "ALTER TABLE notes ADD COLUMN position INTEGER NOT NULL DEFAULT 0;",
                 )?;
                 // Backfill positions based on id order
-                conn.execute_batch(
-                    "UPDATE notes SET position = id - 1;"
-                )?;
+                conn.execute_batch("UPDATE notes SET position = id - 1;")?;
             } else {
                 // Fresh database
                 conn.execute_batch(
@@ -60,7 +56,7 @@ impl Database {
                         position INTEGER NOT NULL DEFAULT 0,
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                    );"
+                    );",
                 )?;
             }
         }
@@ -71,10 +67,7 @@ impl Database {
             .unwrap_or(0);
 
         if count == 0 {
-            conn.execute(
-                "INSERT INTO notes (content, position) VALUES ('', 0)",
-                [],
-            )?;
+            conn.execute("INSERT INTO notes (content, position) VALUES ('', 0)", [])?;
         }
 
         println!("Database initialized at: {:?}", db_path);
@@ -130,7 +123,9 @@ impl Database {
 
         // Get max position
         let max_pos: i64 = conn
-            .query_row("SELECT COALESCE(MAX(position), -1) FROM notes", [], |row| row.get(0))
+            .query_row("SELECT COALESCE(MAX(position), -1) FROM notes", [], |row| {
+                row.get(0)
+            })
             .unwrap_or(-1);
 
         let new_pos = max_pos + 1;
@@ -162,7 +157,9 @@ impl Database {
 
         // Get the position of the note being deleted
         let deleted_pos: i64 = conn
-            .query_row("SELECT position FROM notes WHERE id = ?1", [id], |row| row.get(0))
+            .query_row("SELECT position FROM notes WHERE id = ?1", [id], |row| {
+                row.get(0)
+            })
             .map_err(|e| e.to_string())?;
 
         conn.execute("DELETE FROM notes WHERE id = ?1", [id])

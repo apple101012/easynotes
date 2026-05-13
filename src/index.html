@@ -5,14 +5,26 @@
     <link rel="icon" type="image/svg+xml" href="icon.svg" />
     <link rel="stylesheet" href="styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>noted</title>
+    <title>EasyNotes</title>
     <script type="module" src="/main.js" defer></script>
   </head>
 
   <body>
     <div id="window">
       <div id="titlebar" data-tauri-drag-region>
-        <div id="titlebar-grip"></div>
+        <div id="note-nav">
+          <button id="btn-prev-note" title="Previous note" aria-label="Previous note">
+            <svg width="8" height="12" viewBox="0 0 8 12" fill="none" aria-hidden="true">
+              <path d="M6.5 1.5L2 6L6.5 10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div id="titlebar-grip"></div>
+          <button id="btn-next-note" title="Next note" aria-label="Next note">
+            <svg width="8" height="12" viewBox="0 0 8 12" fill="none" aria-hidden="true">
+              <path d="M1.5 1.5L6 6L1.5 10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
         <button id="btn-settings" title="Settings" aria-label="Settings">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <line x1="2" y1="4" x2="14" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -60,10 +72,33 @@
             </div>
             <input id="theme-file-input" type="file" accept=".json,application/json"hidden />
           </div>
-        </div>
-        <div class="settings-update-row" id="update-row">
-          <button class="settings-update-btn" id="update-btn">Check for Updates</button>
-          <span class="settings-update-version" id="update-version">v0.1.4</span>
+          <div class="settings-section">
+            <div class="settings-section-row">
+              <h3 class="settings-section-title">Shortcut</h3>
+            </div>
+            <div class="shortcut-row">
+              <input id="toggle-shortcut-input" type="text" value="Alt+A" spellcheck="false" aria-label="Show or hide shortcut" />
+              <button id="btn-save-shortcut">Save</button>
+            </div>
+            <p id="shortcut-status" class="settings-status" aria-live="polite"></p>
+          </div>
+          <div class="settings-section">
+            <div class="settings-section-row">
+              <h3 class="settings-section-title">Notes</h3>
+            </div>
+            <div class="shortcut-stack">
+              <label class="shortcut-field">
+                <span>Previous</span>
+                <input id="previous-note-shortcut-input" type="text" value="Ctrl+Shift+ArrowLeft" spellcheck="false" aria-label="Previous note shortcut" />
+              </label>
+              <label class="shortcut-field">
+                <span>Next</span>
+                <input id="next-note-shortcut-input" type="text" value="Ctrl+Shift+ArrowRight" spellcheck="false" aria-label="Next note shortcut" />
+              </label>
+              <button id="btn-save-note-shortcuts">Save</button>
+            </div>
+            <p id="note-shortcuts-status" class="settings-status" aria-live="polite"></p>
+          </div>
         </div>
       </aside>
     </div>

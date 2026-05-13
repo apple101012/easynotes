@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "noted",
-  "version": "0.1.5",
-  "identifier": "com.khurram.noted",
+  "productName": "EasyNotes",
+  "version": "0.1.0",
+  "identifier": "app.easynotes.desktop",
   "build": {
     "frontendDist": "../src"
   },
@@ -10,13 +10,14 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "noted",
+        "title": "EasyNotes",
         "width": 340,
         "height": 440,
         "minWidth": 340,
         "minHeight": 440,
         "decorations": false,
         "transparent": true,
+        "alwaysOnTop": true,
         "center": true
       }
     ],
@@ -24,12 +25,7 @@
       "csp": null
     }
   },
-  "plugins": {
-    "updater": {
-      "endpoints": ["https://raw.githubusercontent.com/khurrambhutto/noted/main/latest.json"],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM1NzExOTVENzE0NkQ4MzgKUldRNDJFWnhYUmx4TmU3ekF2czU1UXpGOURxN29GUml5UFJvUnlUU3FpSXhtZUUwejdzMlZLcEIK"
-    }
-  },
+  "plugins": {},
   "bundle": {
     "active": true,
     "targets": "all",
