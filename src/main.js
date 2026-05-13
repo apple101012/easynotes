@@ -22,6 +22,16 @@ let activeTheme = null;
 let undoManager = null;
 let previousNoteShortcut = 'Ctrl+Shift+ArrowLeft';
 let nextNoteShortcut = 'Ctrl+Shift+ArrowRight';
+const pressedModifiers = {
+  ControlLeft: false,
+  ControlRight: false,
+  ShiftLeft: false,
+  ShiftRight: false,
+  AltLeft: false,
+  AltRight: false,
+  MetaLeft: false,
+  MetaRight: false
+};
 
 // ── DOM ──
 const canvas = document.getElementById('note-canvas');
@@ -182,13 +192,41 @@ async function initAppSettings() {
 
 function normalizeShortcutFromEvent(e) {
   const parts = [];
-  if (e.ctrlKey) parts.push('Ctrl');
-  if (e.altKey) parts.push('Alt');
-  if (e.shiftKey) parts.push('Shift');
-  if (e.metaKey) parts.push('Super');
+  const isModifierKey = ['Control', 'Alt', 'Shift', 'Meta'].includes(e.key);
 
-  const modifierKeys = new Set(['Control', 'Alt', 'Shift', 'Meta']);
-  if (modifierKeys.has(e.key)) return null;
+  if (pressedModifiers.ControlLeft && !pressedModifiers.ControlRight) {
+    parts.push('LeftCtrl');
+  } else if (pressedModifiers.ControlRight && !pressedModifiers.ControlLeft) {
+    parts.push('RightCtrl');
+  } else if (e.ctrlKey || pressedModifiers.ControlLeft || pressedModifiers.ControlRight) {
+    parts.push('Ctrl');
+  }
+
+  if (pressedModifiers.AltLeft && !pressedModifiers.AltRight) {
+    parts.push('LeftAlt');
+  } else if (pressedModifiers.AltRight && !pressedModifiers.AltLeft) {
+    parts.push('RightAlt');
+  } else if (e.altKey || pressedModifiers.AltLeft || pressedModifiers.AltRight) {
+    parts.push('Alt');
+  }
+
+  if (pressedModifiers.ShiftLeft && !pressedModifiers.ShiftRight) {
+    parts.push('LeftShift');
+  } else if (pressedModifiers.ShiftRight && !pressedModifiers.ShiftLeft) {
+    parts.push('RightShift');
+  } else if (e.shiftKey || pressedModifiers.ShiftLeft || pressedModifiers.ShiftRight) {
+    parts.push('Shift');
+  }
+
+  if (pressedModifiers.MetaLeft && !pressedModifiers.MetaRight) {
+    parts.push('LeftSuper');
+  } else if (pressedModifiers.MetaRight && !pressedModifiers.MetaLeft) {
+    parts.push('RightSuper');
+  } else if (e.metaKey || pressedModifiers.MetaLeft || pressedModifiers.MetaRight) {
+    parts.push('Super');
+  }
+
+  if (isModifierKey) return null;
 
   let key = e.key;
   if (key === ' ') key = 'Space';
@@ -206,6 +244,14 @@ function normalizeShortcutText(value) {
     .filter(Boolean)
     .map((part) => {
       const upper = part.toUpperCase();
+      if (upper === 'LEFTCONTROL' || upper === 'CONTROLLEFT' || upper === 'LEFTCTRL' || upper === 'CTRLLEFT') return 'LeftCtrl';
+      if (upper === 'RIGHTCONTROL' || upper === 'CONTROLRIGHT' || upper === 'RIGHTCTRL' || upper === 'CTRLRIGHT') return 'RightCtrl';
+      if (upper === 'LEFTALT' || upper === 'ALTLEFT') return 'LeftAlt';
+      if (upper === 'RIGHTALT' || upper === 'ALTRIGHT') return 'RightAlt';
+      if (upper === 'LEFTSHIFT' || upper === 'SHIFTLEFT') return 'LeftShift';
+      if (upper === 'RIGHTSHIFT' || upper === 'SHIFTRIGHT') return 'RightShift';
+      if (upper === 'LEFTSUPER' || upper === 'SUPERLEFT' || upper === 'LEFTMETA' || upper === 'METALEFT') return 'LeftSuper';
+      if (upper === 'RIGHTSUPER' || upper === 'SUPERRIGHT' || upper === 'RIGHTMETA' || upper === 'METARIGHT') return 'RightSuper';
       if (upper === 'CONTROL' || upper === 'CTRL') return 'Ctrl';
       if (upper === 'OPTION' || upper === 'ALT') return 'Alt';
       if (upper === 'SHIFT') return 'Shift';
@@ -222,7 +268,9 @@ function normalizeShortcutText(value) {
 }
 
 function eventMatchesShortcut(e, shortcut) {
-  return normalizeShortcutFromEvent(e) === normalizeShortcutText(shortcut);
+  const eventShortcut = normalizeShortcutFromEvent(e);
+  if (!eventShortcut) return false;
+  return eventShortcut === normalizeShortcutText(shortcut);
 }
 
 async function saveToggleShortcut() {
@@ -463,6 +511,10 @@ container.addEventListener('wheel', (e) => {
 // ── Keyboard shortcuts ──
 
 document.addEventListener('keydown', (e) => {
+  if (Object.prototype.hasOwnProperty.call(pressedModifiers, e.code)) {
+    pressedModifiers[e.code] = true;
+  }
+
   const mod = e.metaKey || e.ctrlKey;
 
   // Undo / Redo
@@ -500,6 +552,18 @@ document.addEventListener('keydown', (e) => {
     if (e.key === ']') { e.preventDefault(); slideToNext(); }
     if (e.key === '[') { e.preventDefault(); slideToPrev(); }
   }
+});
+
+document.addEventListener('keyup', (e) => {
+  if (Object.prototype.hasOwnProperty.call(pressedModifiers, e.code)) {
+    pressedModifiers[e.code] = false;
+  }
+});
+
+window.addEventListener('blur', () => {
+  Object.keys(pressedModifiers).forEach((key) => {
+    pressedModifiers[key] = false;
+  });
 });
 
 // ── Init ──

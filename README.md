@@ -23,6 +23,8 @@ EasyNotes is a small Windows scratchpad for quick notes. It is built for people 
 - Legacy previous note: `Ctrl+Shift+[`
 - Legacy next note: `Ctrl+Shift+]`
 
+Note navigation shortcuts can distinguish side-specific modifiers such as `LeftCtrl`, `RightCtrl`, `LeftShift`, and `RightShift`. The global show/hide shortcut uses the operating system global hotkey API, so Control/Alt modifiers are treated generically there.
+
 ## Windows Install
 
 Use the installer from `src-tauri/target/release/bundle/nsis/` after building:
