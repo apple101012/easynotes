@@ -1,7 +1,7 @@
 const { invoke } = window.__TAURI__.core;
 
-const THEME_STORAGE_KEY = 'noted.themes';
-const ACTIVE_THEME_KEY = 'noted.activeTheme';
+const THEME_STORAGE_KEY = 'easynotes.themes';
+const ACTIVE_THEME_KEY = 'easynotes.activeTheme';
 
 export const ANTINOTE_THEME_KEYS = [
   'name', 'isDarkTheme',
@@ -18,87 +18,58 @@ export const ANTINOTE_THEME_KEYS = [
 
 export const DEFAULT_THEMES = [
   {
-    name: 'Noted Light',
+    name: 'Easy Light',
     isDarkTheme: false,
-    background: '#ffffff',
-    backgroundFade: '#f4f4f4',
-    typeMain: '#242424',
-    typeSubtle: '#6d6d6d',
-    typeSubtlePlus: '#4f7d9d',
-    typeHighlight: '#e9e9e9',
-    typeLight: '#a0a0a0',
-    typeSuperlight: '#dddddd',
-    typeHyperLight: '#f6f6f6',
+    background: '#fbfaf7',
+    backgroundFade: '#f1eee8',
+    typeMain: '#23272a',
+    typeSubtle: '#6c716f',
+    typeSubtlePlus: '#55756f',
+    typeHighlight: '#e4eee9',
+    typeLight: '#8a908d',
+    typeSuperlight: '#d8ddd8',
+    typeHyperLight: '#f4f1eb',
     typeReverse: '#ffffff',
-    accent1Main: '#7d7d7d',
-    accent1Secondary: '#666666',
-    accent1Tertiary: '#555555',
-    accent2Main: '#7b61a8',
-    accent2Secondary: '#684f93',
-    accent3Main: '#5c8a55',
-    accent3Secondary: '#477240',
-    accent4Main: '#b97835',
-    accent4Secondary: '#965d24',
-    accent5Main: '#c75d55',
-    accent5Secondary: '#9f443d',
+    accent1Main: '#3e7f74',
+    accent1Secondary: '#315f59',
+    accent1Tertiary: '#264d49',
+    accent2Main: '#4a7da8',
+    accent2Secondary: '#365f82',
+    accent3Main: '#77935a',
+    accent3Secondary: '#5c7147',
+    accent4Main: '#c08a43',
+    accent4Secondary: '#956831',
+    accent5Main: '#c25b50',
+    accent5Secondary: '#98453d',
     gridSuperlight: '#00000000',
     gridClear: '#00000000',
     gridBold: '#00000000',
     gridEnabled: false
   },
   {
-    name: 'Noted Paper',
-    isDarkTheme: false,
-    background: '#f5f0eb',
-    backgroundFade: '#eee7df',
-    typeMain: '#2c2c2c',
-    typeSubtle: '#7b7168',
-    typeSubtlePlus: '#a89e94',
-    typeHighlight: '#dfd5ca',
-    typeLight: '#8f857b',
-    typeSuperlight: '#d8ccc0',
-    typeHyperLight: '#eee6de',
-    typeReverse: '#ffffff',
-    accent1Main: '#a89e94',
-    accent1Secondary: '#8f857b',
-    accent1Tertiary: '#766c63',
-    accent2Main: '#b88764',
-    accent2Secondary: '#9d7150',
-    accent3Main: '#7a8f72',
-    accent3Secondary: '#607357',
-    accent4Main: '#d09354',
-    accent4Secondary: '#a66d37',
-    accent5Main: '#c35c51',
-    accent5Secondary: '#9a443c',
-    gridSuperlight: '#00000000',
-    gridClear: '#00000000',
-    gridBold: '#00000000',
-    gridEnabled: false
-  },
-  {
-    name: 'Noted Dark',
+    name: 'Easy Dark',
     isDarkTheme: true,
-    background: '#1f1d1b',
-    backgroundFade: '#292622',
-    typeMain: '#eee7dc',
-    typeSubtle: '#b6aa9d',
-    typeSubtlePlus: '#d18f65',
-    typeHighlight: '#3a342e',
-    typeLight: '#8e8378',
-    typeSuperlight: '#39342f',
-    typeHyperLight: '#2a2723',
-    typeReverse: '#1f1d1b',
-    accent1Main: '#d18f65',
-    accent1Secondary: '#b87952',
-    accent1Tertiary: '#9d6546',
-    accent2Main: '#b990d8',
-    accent2Secondary: '#9e74bd',
-    accent3Main: '#9ab37a',
-    accent3Secondary: '#7f9961',
-    accent4Main: '#d6a45f',
-    accent4Secondary: '#b18445',
-    accent5Main: '#d66d62',
-    accent5Secondary: '#aa5149',
+    background: '#181b1d',
+    backgroundFade: '#202529',
+    typeMain: '#edf1ee',
+    typeSubtle: '#a9b4ae',
+    typeSubtlePlus: '#82c2b6',
+    typeHighlight: '#253d3b',
+    typeLight: '#75827d',
+    typeSuperlight: '#2b3233',
+    typeHyperLight: '#202629',
+    typeReverse: '#151719',
+    accent1Main: '#70c0b2',
+    accent1Secondary: '#55998f',
+    accent1Tertiary: '#427b73',
+    accent2Main: '#84aede',
+    accent2Secondary: '#668ab3',
+    accent3Main: '#a6c779',
+    accent3Secondary: '#7f9d5b',
+    accent4Main: '#e1ad5b',
+    accent4Secondary: '#b98943',
+    accent5Main: '#e0766c',
+    accent5Secondary: '#b05850',
     gridSuperlight: '#00000000',
     gridClear: '#00000000',
     gridBold: '#00000000',
@@ -106,7 +77,7 @@ export const DEFAULT_THEMES = [
   }
 ];
 
-export function validateAntinoteTheme(value) {
+export function validateEasyNotesTheme(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('Theme must be a JSON object.');
   }
@@ -144,7 +115,7 @@ export async function loadThemes() {
 }
 
 export async function saveImportedTheme(theme) {
-  const validated = validateAntinoteTheme(theme);
+  const validated = validateEasyNotesTheme(theme);
   await invoke('save_theme_file', {
     name: validated.name,
     json: JSON.stringify(validated, null, 2)
@@ -154,7 +125,7 @@ export async function saveImportedTheme(theme) {
 async function loadThemesFromDisk() {
   try {
     const files = await invoke('list_theme_files');
-    return files.map((file) => validateAntinoteTheme(JSON.parse(file.json)));
+    return files.map((file) => validateEasyNotesTheme(JSON.parse(file.json)));
   } catch (error) {
     console.warn('Could not load themes from disk:', error);
     return [];
@@ -164,7 +135,7 @@ async function loadThemesFromDisk() {
 function loadLegacyLocalStorageThemes() {
   try {
     const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '[]');
-    return Array.isArray(saved) ? saved.map(validateAntinoteTheme) : [];
+    return Array.isArray(saved) ? saved.map(validateEasyNotesTheme) : [];
   } catch (error) {
     console.warn('Could not load legacy localStorage themes:', error);
     return [];
@@ -190,7 +161,7 @@ export function applyTheme(theme) {
 
 export function mergeThemes(...groups) {
   const byName = new Map();
-  groups.flat().forEach((theme) => byName.set(theme.name, validateAntinoteTheme(theme)));
+  groups.flat().forEach((theme) => byName.set(theme.name, validateEasyNotesTheme(theme)));
   return [...byName.values()];
 }
 
@@ -234,7 +205,6 @@ function mapThemeToCss(theme) {
     '--theme-grid-clear': theme.gridClear,
     '--theme-grid-bold': theme.gridBold,
 
-    /* Antinote compatibility stubs: accepted now, available for future features. */
     '--theme-accent-2-main': theme.accent2Main,
     '--theme-accent-2-secondary': theme.accent2Secondary,
     '--theme-accent-3-main': theme.accent3Main,

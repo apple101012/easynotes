@@ -1,7 +1,16 @@
 {
   "name": "easynotes",
-  "private": true,
+  "private": false,
   "version": "0.1.0",
+  "description": "An Antinote-style popup scratchpad for Windows.",
+  "license": "MIT",
+  "keywords": [
+    "windows",
+    "notes",
+    "scratchpad",
+    "antinote",
+    "tauri"
+  ],
   "type": "module",
   "scripts": {
     "tauri": "tauri"

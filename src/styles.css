@@ -1,17 +1,17 @@
 :root {
-  --theme-background: #f5f0eb;
-  --theme-background-fade: #eee7df;
-  --theme-type-main: #2c2c2c;
-  --theme-type-subtle: #7b7168;
-  --theme-type-subtle-plus: #a89e94;
-  --theme-type-highlight: #dfd5ca;
-  --theme-type-light: #8f857b;
-  --theme-type-superlight: #d8ccc0;
-  --theme-type-hyperlight: #eee6de;
+  --theme-background: #fbfaf7;
+  --theme-background-fade: #f1eee8;
+  --theme-type-main: #23272a;
+  --theme-type-subtle: #6c716f;
+  --theme-type-subtle-plus: #55756f;
+  --theme-type-highlight: #e4eee9;
+  --theme-type-light: #8a908d;
+  --theme-type-superlight: #d8ddd8;
+  --theme-type-hyperlight: #f4f1eb;
   --theme-type-reverse: #fff;
-  --theme-accent-main: #a89e94;
-  --theme-accent-secondary: #8f857b;
-  --theme-danger: #c35c51;
+  --theme-accent-main: #3e7f74;
+  --theme-accent-secondary: #315f59;
+  --theme-danger: #c25b50;
   --theme-control-text: #ffffff;
   --theme-grid-superlight: #00000000;
   --theme-grid-clear: #00000000;
@@ -312,9 +312,12 @@ html, body {
 
 #settings-panel {
   flex: 1;
+  min-height: 0;
+  height: calc(100% - 36px);
   display: flex;
   flex-direction: column;
-  padding: 32px;
+  overflow: hidden;
+  padding: 24px 24px 18px;
   color: var(--theme-type-main);
   animation: settings-in 0.2s ease-out;
 }
@@ -322,7 +325,24 @@ html, body {
 .settings-scroll {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0;
+  padding-right: 8px;
+  scrollbar-color: color-mix(in srgb, var(--theme-type-main) 18%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.settings-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.settings-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--theme-type-main) 16%, transparent);
+  border-radius: 999px;
 }
 
 :root[data-settings="open"] #canvas-container,
@@ -568,20 +588,8 @@ html, body {
 .theme-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
-}
-
-.theme-browse-link {
-  color: var(--theme-type-subtle-plus);
-  font: 500 12px/1 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
-
-.theme-browse-link:hover {
-  color: var(--theme-accent-main);
-  text-decoration: underline;
 }
 
 #btn-import-theme {
@@ -681,44 +689,4 @@ html, body {
 
 .settings-status.error {
   color: var(--theme-danger);
-}
-
-/* ── Update Row ── */
-
-.settings-update-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 12px;
-  border-top: 1px solid color-mix(in srgb, var(--theme-type-main) 8%, transparent);
-  margin-top: auto;
-}
-
-.settings-update-btn {
-  border: none;
-  background: none;
-  color: var(--theme-type-main);
-  font: 500 12px/1 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.15s ease;
-}
-
-.settings-update-btn:hover {
-  color: var(--theme-accent-main);
-}
-
-.settings-update-btn:disabled {
-  color: var(--theme-type-light);
-  cursor: default;
-}
-
-.settings-update-btn.install {
-  color: var(--theme-accent-main);
-  font-weight: 600;
-}
-
-.settings-update-version {
-  color: var(--theme-type-light);
-  font: 500 11px/1 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
 }

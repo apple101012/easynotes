@@ -91,23 +91,7 @@ fn migrate_legacy_data(app_data_dir: &PathBuf) {
         }
     }
 
-    let legacy_themes = legacy_dir.join("themes");
-    let themes = app_data_dir.join("themes");
-    if legacy_themes.exists() && !themes.exists() {
-        let _ = fs::create_dir_all(&themes);
-        if let Ok(entries) = fs::read_dir(legacy_themes) {
-            for entry in entries.flatten() {
-                let source = entry.path();
-                if source.extension().and_then(|ext| ext.to_str()) != Some("json") {
-                    continue;
-                }
-                let target = themes.join(entry.file_name());
-                if !target.exists() {
-                    let _ = fs::copy(source, target);
-                }
-            }
-        }
-    }
+    // Do not migrate legacy theme files. EasyNotes ships original themes only.
 }
 
 fn toggle_main_window(app: &tauri::AppHandle) {

@@ -4,7 +4,7 @@ import {
   loadThemes,
   saveImportedTheme,
   setActiveThemeName,
-  validateAntinoteTheme
+  validateEasyNotesTheme
 } from './themes.js';
 import { UndoManager } from './undo/undo-manager.js';
 
@@ -81,7 +81,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// ── Theme System (Antinote JSON compatible) ──
+// ── Theme System ──
 
 async function initThemes() {
   themes = await loadThemes();
@@ -130,7 +130,7 @@ function setThemeByName(name) {
 async function importThemeFile(file) {
   try {
     const raw = await file.text();
-    const imported = validateAntinoteTheme(JSON.parse(raw));
+    const imported = validateEasyNotesTheme(JSON.parse(raw));
     const existingIndex = themes.findIndex((theme) => theme.name === imported.name);
 
     if (existingIndex >= 0) {

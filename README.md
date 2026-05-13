@@ -1,74 +1,65 @@
-<h1 align="center">noted</h1>
+# EasyNotes
 
-
-<p align="center">
-  <img src="Screenshot from 2026-05-04 17-37-31.png" width="32%" />
-  <img src="Screenshot from 2026-05-04 17-38-40.png" width="32%" />
-  <img src="Screenshot from 2026-05-04 17-39-27.png" width="32%" />
-</p>
-
-A minimal, distraction-free note-taking app built with [Tauri](https://v2.tauri.app/).
+EasyNotes is a small Windows scratchpad for quick notes. It is built for people who want an Antinote-style popup notepad on Windows: press a keybind, jot something down, switch between small notes, and hide it again.
 
 ## Features
 
-- Clean, minimal editor — just you and your words
-- Slide navigation between notes (trackpad gestures or keyboard shortcuts)
-- Custom themes compatible with Antinote JSON format
-- Lightweight — a single native window, no bloat
+- Global show/hide hotkey, default `Alt+A`
+- System tray persistence with Show, Hide, and Quit
+- Always-on-top compact note window
+- Autosave while typing
+- Stack-style note navigation
+- Empty notes are cleaned up when you move away from them
+- Configurable shortcuts for show/hide, previous note, and next note
+- Header arrow buttons for switching notes
+- Original EasyNotes light and dark themes
+- Theme JSON import support
 
-## Navigation
+## Default Shortcuts
 
-Swipe left or right with two fingers on the trackpad to move between notes. The active note indicator at the bottom shows your position in the stack.
+- Show/hide: `Alt+A`
+- Previous note: `Ctrl+Shift+ArrowLeft`
+- Next note: `Ctrl+Shift+ArrowRight`
+- Legacy previous note: `Ctrl+Shift+[`
+- Legacy next note: `Ctrl+Shift+]`
 
-## Install
+## Windows Install
 
-### Linux
+Use the installer from `src-tauri/target/release/bundle/nsis/` after building:
 
-**Debian/Ubuntu (.deb):**
-
-```bash
-sudo dpkg -i noted_0.1.0_amd64.deb
-```
-
-**Fedora/RHEL (.rpm):**
-
-```bash
-sudo rpm -i noted-0.1.0-1.x86_64.rpm
-```
-
-**AppImage:**
-
-```bash
-chmod +x noted_0.1.0_amd64.AppImage
-./noted_0.1.0_amd64.AppImage
-```
-
-### Windows
-
-Run the `.msi` installer from the latest release.
-
-## Build from Source
-
-### Prerequisites
-
-- [Rust](https://rustup.rs/)
-- Node.js
-- Tauri system dependencies — see [Tauri docs](https://v2.tauri.app/start/prerequisites/)
-
-### Commands
-
-```bash
+```powershell
 npm install
-npx tauri dev    # run in development mode
-npx tauri build  # build for distribution
+npm run tauri build
 ```
 
-## Themes
+The Windows installer is generated as:
 
-noted uses Antinote-compatible theme JSON files. Import themes from the settings panel.
+```text
+src-tauri/target/release/bundle/nsis/EasyNotes_0.1.0_x64-setup.exe
+```
+
+## Development
+
+Prerequisites:
+
+- Rust
+- Node.js
+- Tauri v2 system dependencies
+
+Commands:
+
+```powershell
+npm install
+npm run tauri dev
+npm run tauri build
+```
+
+## Notes
+
+EasyNotes includes original light and dark themes. It does not ship third-party copyrighted theme packs.
 
 ## Tech Stack
 
-- [Tauri](https://v2.tauri.app/) — native desktop shell
-- Vanilla HTML/CSS/JS — no framework overhead
-- [Antinote](https://antinote.app/) — theme format compatible
+- Tauri 2
+- Rust
+- Vanilla HTML/CSS/JS
