@@ -2,13 +2,17 @@
   "name": "easynotes",
   "private": false,
   "version": "0.1.0",
-  "description": "An Antinote-style popup scratchpad for Windows.",
+  "description": "An Antinote-style popup scratchpad and Antinote for Windows alternative.",
   "license": "MIT",
   "keywords": [
     "windows",
     "notes",
     "scratchpad",
     "antinote",
+    "antinote-windows",
+    "antinote-alternative",
+    "quick-notes",
+    "sticky-notes",
     "tauri"
   ],
   "type": "module",

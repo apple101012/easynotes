@@ -1,6 +1,10 @@
 # EasyNotes
 
-EasyNotes is a small Windows scratchpad for quick notes. It is built for people who want an Antinote-style popup notepad on Windows: press a keybind, jot something down, switch between small notes, and hide it again.
+**An Antinote-style scratchpad for Windows.**
+
+EasyNotes is a small Windows popup notepad for quick notes. It is built for people searching for an **Antinote for Windows alternative**: press a keybind, jot something down, switch between small notes, and hide it again.
+
+EasyNotes is an independent open-source project and is not affiliated with Antinote.
 
 ## Features
 

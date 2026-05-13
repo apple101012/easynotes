@@ -1,8 +1,8 @@
 # EasyNotes
 
-EasyNotes is an open-source Windows scratchpad app built with Tauri 2, Rust, and vanilla HTML/CSS/JS.
+EasyNotes is an open-source Antinote-style scratchpad for Windows built with Tauri 2, Rust, and vanilla HTML/CSS/JS.
 
-It is useful for users looking for an Antinote-style Windows alternative: a compact always-on-top notepad that can be shown or hidden with a global hotkey, persists in the system tray, autosaves notes, and supports quick switching between note cards.
+It is useful for users looking for an Antinote for Windows alternative: a compact always-on-top popup notepad that can be shown or hidden with a global hotkey, persists in the system tray, autosaves notes, and supports quick switching between note cards.
 
 Core features:
 
@@ -25,4 +25,5 @@ Default shortcuts:
 Positioning:
 
 - Describe it as an Antinote-style scratchpad for Windows, not as an official Antinote product.
+- Search phrase: Antinote for Windows alternative.
 - It does not ship Antinote theme packs or third-party copyrighted theme assets.
