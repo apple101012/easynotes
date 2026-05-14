@@ -22,6 +22,7 @@ let activeTheme = null;
 let undoManager = null;
 let previousNoteShortcut = 'Ctrl+Shift+ArrowLeft';
 let nextNoteShortcut = 'Ctrl+Shift+ArrowRight';
+let mouseNoteButtonsEnabled = true;
 const pressedModifiers = {
   ControlLeft: false,
   ControlRight: false,
@@ -51,6 +52,7 @@ const previousNoteShortcutInput = document.getElementById('previous-note-shortcu
 const nextNoteShortcutInput = document.getElementById('next-note-shortcut-input');
 const saveNoteShortcutsButton = document.getElementById('btn-save-note-shortcuts');
 const noteShortcutsStatus = document.getElementById('note-shortcuts-status');
+const mouseNoteButtonsToggle = document.getElementById('mouse-note-buttons-toggle');
 // ── Custom Theme Dropdown ──
 const dropdownTrigger = document.getElementById('theme-dropdown-trigger');
 const dropdownPanel = document.getElementById('theme-dropdown-panel');
@@ -183,8 +185,10 @@ async function initAppSettings() {
     toggleShortcutInput.value = settings.toggle_shortcut || 'Alt+A';
     previousNoteShortcut = settings.previous_note_shortcut || 'Ctrl+Shift+ArrowLeft';
     nextNoteShortcut = settings.next_note_shortcut || 'Ctrl+Shift+ArrowRight';
+    mouseNoteButtonsEnabled = settings.mouse_note_buttons_enabled !== false;
     previousNoteShortcutInput.value = previousNoteShortcut;
     nextNoteShortcutInput.value = nextNoteShortcut;
+    mouseNoteButtonsToggle.checked = mouseNoteButtonsEnabled;
   } catch (error) {
     console.error('Could not load settings:', error);
   }
@@ -318,6 +322,18 @@ async function saveNoteShortcuts() {
     noteShortcutsStatus.classList.add('error');
   } finally {
     saveNoteShortcutsButton.disabled = false;
+  }
+}
+
+async function setMouseNoteButtonsEnabled(enabled) {
+  mouseNoteButtonsEnabled = enabled;
+  try {
+    const settings = await invoke('set_mouse_note_buttons_enabled', { enabled });
+    mouseNoteButtonsEnabled = settings.mouse_note_buttons_enabled !== false;
+    mouseNoteButtonsToggle.checked = mouseNoteButtonsEnabled;
+  } catch (error) {
+    console.error('Could not save mouse note button setting:', error);
+    mouseNoteButtonsToggle.checked = mouseNoteButtonsEnabled;
   }
 }
 
@@ -508,6 +524,25 @@ container.addEventListener('wheel', (e) => {
   }
 }, { passive: false });
 
+function handleMouseNoteButton(e) {
+  if (!mouseNoteButtonsEnabled || animating) return;
+
+  if (e.button === 3) {
+    e.preventDefault();
+    e.stopPropagation();
+    slideToPrev();
+  }
+
+  if (e.button === 4) {
+    e.preventDefault();
+    e.stopPropagation();
+    slideToNext();
+  }
+}
+
+window.addEventListener('mousedown', handleMouseNoteButton, { capture: true });
+window.addEventListener('auxclick', handleMouseNoteButton, { capture: true });
+
 // ── Keyboard shortcuts ──
 
 document.addEventListener('keydown', (e) => {
@@ -655,6 +690,10 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   saveNoteShortcutsButton?.addEventListener('click', saveNoteShortcuts);
+
+  mouseNoteButtonsToggle?.addEventListener('change', () => {
+    setMouseNoteButtonsEnabled(mouseNoteButtonsToggle.checked);
+  });
 
   document.getElementById('btn-minimize')?.addEventListener('mousedown', (e) => {
     e.stopPropagation();

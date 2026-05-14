@@ -35,6 +35,8 @@ struct AppSettings {
     previous_note_shortcut: String,
     #[serde(default = "default_next_note_shortcut")]
     next_note_shortcut: String,
+    #[serde(default = "default_mouse_note_buttons_enabled")]
+    mouse_note_buttons_enabled: bool,
 }
 
 fn default_toggle_shortcut() -> String {
@@ -49,12 +51,17 @@ fn default_next_note_shortcut() -> String {
     "Ctrl+Shift+ArrowRight".to_string()
 }
 
+fn default_mouse_note_buttons_enabled() -> bool {
+    true
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
             toggle_shortcut: default_toggle_shortcut(),
             previous_note_shortcut: default_previous_note_shortcut(),
             next_note_shortcut: default_next_note_shortcut(),
+            mouse_note_buttons_enabled: default_mouse_note_buttons_enabled(),
         }
     }
 }
@@ -240,7 +247,19 @@ fn set_toggle_shortcut(
         toggle_shortcut: shortcut,
         previous_note_shortcut: load_settings(&paths.settings_path).previous_note_shortcut,
         next_note_shortcut: load_settings(&paths.settings_path).next_note_shortcut,
+        mouse_note_buttons_enabled: load_settings(&paths.settings_path).mouse_note_buttons_enabled,
     };
+    save_settings(&paths.settings_path, &settings)?;
+    Ok(settings)
+}
+
+#[tauri::command]
+fn set_mouse_note_buttons_enabled(
+    enabled: bool,
+    paths: tauri::State<'_, AppPaths>,
+) -> Result<AppSettings, String> {
+    let mut settings = load_settings(&paths.settings_path);
+    settings.mouse_note_buttons_enabled = enabled;
     save_settings(&paths.settings_path, &settings)?;
     Ok(settings)
 }
@@ -372,7 +391,8 @@ pub fn run() {
             save_theme_file,
             get_app_settings,
             set_toggle_shortcut,
-            set_note_shortcuts
+            set_note_shortcuts,
+            set_mouse_note_buttons_enabled
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

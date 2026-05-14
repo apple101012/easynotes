@@ -696,3 +696,20 @@ html, body {
   color: var(--theme-type-light);
   font: 500 11px/1.35 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
 }
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  color: var(--theme-type-main);
+  font: 500 12px/1.35 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+  cursor: pointer;
+}
+
+.toggle-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--theme-accent-main);
+  flex-shrink: 0;
+}

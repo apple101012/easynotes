@@ -13,6 +13,7 @@ Core features:
 - Stack-style note navigation
 - Empty note cleanup
 - Configurable note switching shortcuts
+- Optional Mouse4/Mouse5 previous and next note navigation
 - Original EasyNotes Light and EasyNotes Dark themes
 - Theme JSON import support
 
