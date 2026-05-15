@@ -402,20 +402,27 @@ function scheduleChecklistSave() {
 
 const LIST_UNCHECKED = '[ ] ';
 const LIST_CHECKED = '[x] ';
-const DEFAULT_LIST_MARKER = 'list';
+const DEFAULT_LIST_MARKER = '/list';
+const LEGACY_LIST_MARKERS = new Set(['list', 'todo']);
 
 function isListTrigger(text) {
   const value = text.trim().toLowerCase();
-  return value === 'list' || value === 'todo';
+  return value === DEFAULT_LIST_MARKER;
 }
 
 function isChecklistLine(line) {
   return line.startsWith(LIST_UNCHECKED) || line.startsWith(LIST_CHECKED);
 }
 
+function hasChecklistMarker(lines) {
+  const firstLine = (lines[0] || '').trim().toLowerCase();
+  if (isListTrigger(firstLine)) return true;
+  return LEGACY_LIST_MARKERS.has(firstLine) && lines.slice(1).some((line) => isChecklistLine(line));
+}
+
 function isChecklistNote() {
   const lines = canvas.value.split('\n');
-  return isListTrigger(lines[0] || '') || lines.some((line) => isChecklistLine(line));
+  return hasChecklistMarker(lines) || lines.some((line) => isChecklistLine(line));
 }
 
 function stripChecklistPrefix(line) {
@@ -426,7 +433,7 @@ function stripChecklistPrefix(line) {
 
 function parseChecklistItems() {
   const lines = canvas.value.split('\n');
-  const hasMarker = isListTrigger(lines[0] || '');
+  const hasMarker = hasChecklistMarker(lines);
   const itemLines = hasMarker ? lines.slice(1) : lines;
 
   return itemLines.map((line) => {
@@ -679,7 +686,7 @@ function renderChecklistView({ focusFirst = false } = {}) {
   }
 
   const lines = canvas.value.split('\n');
-  const markerText = isListTrigger(lines[0] || '') ? lines[0].trim().toLowerCase() : DEFAULT_LIST_MARKER;
+  const markerText = DEFAULT_LIST_MARKER;
   const items = parseChecklistItems();
   if (items.length === 0) items.push({ checked: false, text: '' });
   checklistView.replaceChildren(createChecklistMarker(markerText), ...items.map((item) => createChecklistItem(item)));
