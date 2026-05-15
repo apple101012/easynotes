@@ -271,7 +271,7 @@ html, body {
 #checklist-view {
   width: 100%;
   height: 100%;
-  padding: 8px 22px 32px 22px;
+  padding: 8px 24px 32px 24px;
   overflow-y: auto;
   scrollbar-color: var(--theme-type-highlight) transparent;
   scrollbar-width: thin;
@@ -292,26 +292,55 @@ html, body {
   background-clip: content-box;
 }
 
-.checklist-item {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 6px;
-  align-items: start;
-  min-height: 32px;
-  padding: 5px 8px 5px 6px;
-  border-radius: 10px;
-  transition: background 0.14s ease, transform 0.14s ease;
+.checklist-marker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px 0;
 }
 
-.checklist-item:hover,
-.checklist-item:focus-within {
-  background: color-mix(in srgb, var(--theme-type-main) 5%, transparent);
+.checklist-marker {
+  min-width: 34px;
+  max-width: 110px;
+  padding: 4px 9px 5px;
+  border-radius: 999px;
+  outline: none;
+  color: var(--theme-control-text);
+  background: color-mix(in srgb, var(--theme-accent-2-main) 64%, var(--theme-accent-main));
+  font: 700 11px/1 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--theme-type-reverse) 18%, transparent),
+    0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.checklist-marker:focus {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--theme-type-reverse) 18%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--theme-accent-2-main) 34%, transparent);
+}
+
+.checklist-marker-label {
+  color: var(--theme-type-light);
+  font: 700 10px/1 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.checklist-item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 7px;
+  align-items: start;
+  min-height: 25px;
+  padding: 2px 0;
 }
 
 .checklist-toggle {
-  width: 20px;
-  height: 20px;
-  margin-top: 1px;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
   border: 1.5px solid color-mix(in srgb, var(--theme-accent-main) 55%, var(--theme-type-light));
   border-radius: 50%;
   background: color-mix(in srgb, var(--theme-background) 84%, var(--theme-type-reverse) 16%);
@@ -337,10 +366,10 @@ html, body {
 .checklist-item.checked .checklist-toggle::after {
   content: '';
   position: absolute;
-  left: 5px;
-  top: 3px;
-  width: 6px;
-  height: 10px;
+  left: 4px;
+  top: 2px;
+  width: 5px;
+  height: 8px;
   border: solid var(--theme-control-text);
   border-width: 0 2px 2px 0;
   transform: rotate(42deg);
@@ -348,8 +377,8 @@ html, body {
 
 .checklist-text {
   min-width: 0;
-  min-height: 22px;
-  padding: 1px 0 2px;
+  min-height: 21px;
+  padding: 0 0 2px;
   outline: none;
   color: var(--theme-type-main);
   font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;

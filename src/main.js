@@ -402,6 +402,7 @@ function scheduleChecklistSave() {
 
 const LIST_UNCHECKED = '[ ] ';
 const LIST_CHECKED = '[x] ';
+const DEFAULT_LIST_MARKER = 'list';
 
 function isListTrigger(text) {
   const value = text.trim().toLowerCase();
@@ -413,11 +414,22 @@ function isChecklistLine(line) {
 }
 
 function isChecklistNote() {
-  return canvas.value.split('\n').some((line) => isChecklistLine(line));
+  const lines = canvas.value.split('\n');
+  return isListTrigger(lines[0] || '') || lines.some((line) => isChecklistLine(line));
+}
+
+function stripChecklistPrefix(line) {
+  if (line.startsWith(LIST_CHECKED)) return line.slice(LIST_CHECKED.length);
+  if (line.startsWith(LIST_UNCHECKED)) return line.slice(LIST_UNCHECKED.length);
+  return line;
 }
 
 function parseChecklistItems() {
-  return canvas.value.split('\n').map((line) => {
+  const lines = canvas.value.split('\n');
+  const hasMarker = isListTrigger(lines[0] || '');
+  const itemLines = hasMarker ? lines.slice(1) : lines;
+
+  return itemLines.map((line) => {
     if (line.startsWith(LIST_CHECKED)) {
       return { checked: true, text: line.slice(LIST_CHECKED.length) };
     }
@@ -429,12 +441,14 @@ function parseChecklistItems() {
 }
 
 function serializeChecklistItems() {
+  const marker = checklistView.querySelector('.checklist-marker')?.textContent.trim() || DEFAULT_LIST_MARKER;
   return [...checklistView.querySelectorAll('.checklist-item')]
-    .map((item) => {
+    .reduce((lines, item) => {
       const checked = item.classList.contains('checked');
       const text = item.querySelector('.checklist-text')?.textContent || '';
-      return `${checked ? LIST_CHECKED : LIST_UNCHECKED}${text}`;
-    })
+      lines.push(`${checked ? LIST_CHECKED : LIST_UNCHECKED}${text}`);
+      return lines;
+    }, [marker])
     .join('\n');
 }
 
@@ -442,6 +456,64 @@ function updateChecklistSource() {
   canvas.value = serializeChecklistItems();
   notes[currentIndex].content = canvas.value;
   scheduleChecklistSave();
+}
+
+function checklistPlainText(markerText = '') {
+  const itemText = [...checklistView.querySelectorAll('.checklist-item')]
+    .map((item) => item.querySelector('.checklist-text')?.textContent || '')
+    .join('\n');
+  const marker = markerText.trim();
+  return marker ? `${marker}\n${itemText}` : itemText;
+}
+
+function disableChecklistMode(markerText = '') {
+  const value = checklistPlainText(markerText);
+  canvas.value = value;
+  notes[currentIndex].content = value;
+  renderChecklistView();
+  canvas.focus();
+  canvas.selectionStart = Math.min(value.length, markerText.length);
+  canvas.selectionEnd = canvas.selectionStart;
+  scheduleSave();
+}
+
+function createChecklistMarker(markerText) {
+  const row = document.createElement('div');
+  row.className = 'checklist-marker-row';
+
+  const marker = document.createElement('div');
+  marker.className = 'checklist-marker';
+  marker.contentEditable = 'true';
+  marker.spellcheck = false;
+  marker.textContent = markerText || DEFAULT_LIST_MARKER;
+  marker.setAttribute('aria-label', 'List marker');
+
+  const label = document.createElement('span');
+  label.className = 'checklist-marker-label';
+  label.textContent = 'checklist';
+
+  marker.addEventListener('input', () => {
+    const value = marker.textContent.trim();
+    if (!isListTrigger(value)) {
+      disableChecklistMode(value);
+      return;
+    }
+    updateChecklistSource();
+  });
+
+  marker.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && marker.textContent.trim() === '') {
+      e.preventDefault();
+      disableChecklistMode('');
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      checklistView.querySelector('.checklist-text')?.focus();
+    }
+  });
+
+  row.append(marker, label);
+  return row;
 }
 
 function createChecklistItem({ checked = false, text = '' } = {}) {
@@ -569,8 +641,11 @@ function renderChecklistView({ focusFirst = false } = {}) {
     return;
   }
 
+  const lines = canvas.value.split('\n');
+  const markerText = isListTrigger(lines[0] || '') ? lines[0].trim().toLowerCase() : DEFAULT_LIST_MARKER;
   const items = parseChecklistItems();
-  checklistView.replaceChildren(...items.map((item) => createChecklistItem(item)));
+  if (items.length === 0) items.push({ checked: false, text: '' });
+  checklistView.replaceChildren(createChecklistMarker(markerText), ...items.map((item) => createChecklistItem(item)));
   if (focusFirst) {
     checklistView.querySelector('.checklist-text')?.focus();
   }
@@ -607,7 +682,7 @@ function normalizePastedChecklistTrigger() {
     if (isChecklistLine(line)) return line;
     return `${LIST_UNCHECKED}${line}`;
   });
-  const value = converted.join('\n');
+  const value = `${lines[0].trim().toLowerCase()}\n${converted.join('\n')}`;
   setCanvasValue(value, value.length);
   return true;
 }
@@ -618,7 +693,7 @@ function handleChecklistEnter(e) {
   const { start, end, text } = getLineRange(canvas.selectionStart);
   if (isListTrigger(text)) {
     e.preventDefault();
-    const value = canvas.value.slice(0, start) + LIST_UNCHECKED + canvas.value.slice(end);
+    const value = canvas.value.slice(0, start) + `${text.trim().toLowerCase()}\n${LIST_UNCHECKED}` + canvas.value.slice(end);
     canvas.value = value;
     renderChecklistView({ focusFirst: true });
     scheduleSave();
