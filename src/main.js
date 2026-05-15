@@ -477,6 +477,48 @@ function disableChecklistMode(markerText = '') {
   scheduleSave();
 }
 
+function getEditableCaretOffset(element) {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || !element.contains(selection.anchorNode)) {
+    return element.textContent.length;
+  }
+
+  const range = selection.getRangeAt(0).cloneRange();
+  range.selectNodeContents(element);
+  range.setEnd(selection.anchorNode, selection.anchorOffset);
+  return range.toString().length;
+}
+
+function setEditableCaretOffset(element, offset) {
+  element.focus();
+  if (!element.firstChild) {
+    element.append(document.createTextNode(''));
+  }
+
+  const textNode = element.firstChild;
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.setStart(textNode, Math.min(offset, textNode.textContent.length));
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function focusFirstChecklistItem() {
+  const first = checklistView.querySelector('.checklist-text');
+  if (!first) return false;
+  setEditableCaretOffset(first, 0);
+  return true;
+}
+
+function selectEntireChecklist() {
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(checklistView);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
 function createChecklistMarker(markerText) {
   const row = document.createElement('div');
   row.className = 'checklist-marker-row';
@@ -488,10 +530,6 @@ function createChecklistMarker(markerText) {
   marker.textContent = markerText || DEFAULT_LIST_MARKER;
   marker.setAttribute('aria-label', 'List marker');
 
-  const label = document.createElement('span');
-  label.className = 'checklist-marker-label';
-  label.textContent = 'checklist';
-
   marker.addEventListener('input', () => {
     const value = marker.textContent.trim();
     if (!isListTrigger(value)) {
@@ -502,17 +540,31 @@ function createChecklistMarker(markerText) {
   });
 
   marker.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      selectEntireChecklist();
+      return;
+    }
+
     if (e.key === 'Backspace' && marker.textContent.trim() === '') {
       e.preventDefault();
       disableChecklistMode('');
+      return;
     }
-    if (e.key === 'Enter') {
+
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
       e.preventDefault();
-      checklistView.querySelector('.checklist-text')?.focus();
+      focusFirstChecklistItem();
+      return;
+    }
+
+    if (e.key === 'ArrowRight' && getEditableCaretOffset(marker) === marker.textContent.length) {
+      e.preventDefault();
+      focusFirstChecklistItem();
     }
   });
 
-  row.append(marker, label);
+  row.append(marker);
   return row;
 }
 
@@ -537,35 +589,8 @@ function createChecklistItem({ checked = false, text = '' } = {}) {
     updateChecklistSource();
   });
 
-  function getCaretOffset() {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || !content.contains(selection.anchorNode)) {
-      return content.textContent.length;
-    }
-
-    const range = selection.getRangeAt(0).cloneRange();
-    range.selectNodeContents(content);
-    range.setEnd(selection.anchorNode, selection.anchorOffset);
-    return range.toString().length;
-  }
-
-  function setCaretOffset(target, offset) {
-    target.focus();
-    if (!target.firstChild) {
-      target.append(document.createTextNode(''));
-    }
-    const textNode = target.firstChild;
-
-    const selection = window.getSelection();
-    const range = document.createRange();
-    range.setStart(textNode, Math.min(offset, textNode.textContent.length));
-    range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
-  }
-
   function focusNeighbor(direction, edgeOnly = false) {
-    const offset = getCaretOffset();
+    const offset = getEditableCaretOffset(content);
     const atStart = offset === 0;
     const atEnd = offset === content.textContent.length;
     if (edgeOnly && direction < 0 && !atStart) return false;
@@ -573,14 +598,26 @@ function createChecklistItem({ checked = false, text = '' } = {}) {
 
     const neighbor = direction < 0 ? item.previousElementSibling : item.nextElementSibling;
     const neighborText = neighbor?.querySelector('.checklist-text');
+    if (!neighborText && direction < 0) {
+      const marker = checklistView.querySelector('.checklist-marker');
+      if (!marker) return false;
+      setEditableCaretOffset(marker, marker.textContent.length);
+      return true;
+    }
     if (!neighborText) return false;
 
-    setCaretOffset(neighborText, edgeOnly && direction < 0 ? neighborText.textContent.length : offset);
+    setEditableCaretOffset(neighborText, edgeOnly && direction < 0 ? neighborText.textContent.length : offset);
     return true;
   }
 
   content.addEventListener('input', updateChecklistSource);
   content.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      selectEntireChecklist();
+      return;
+    }
+
     if (e.key === 'Enter' && e.ctrlKey && !e.altKey && !e.metaKey) {
       e.preventDefault();
       item.classList.toggle('checked');
@@ -880,6 +917,18 @@ function handleMouseNoteButton(e) {
 
 window.addEventListener('mousedown', handleMouseNoteButton, { capture: true });
 window.addEventListener('auxclick', handleMouseNoteButton, { capture: true });
+document.addEventListener('copy', (e) => {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+  if (!isChecklistNote() || checklistView.classList.contains('hidden')) return;
+
+  const range = selection.getRangeAt(0);
+  if (!checklistView.contains(range.commonAncestorContainer)) return;
+  if (range.commonAncestorContainer !== checklistView) return;
+
+  e.preventDefault();
+  e.clipboardData.setData('text/plain', canvas.value);
+});
 
 // ── Keyboard shortcuts ──
 
