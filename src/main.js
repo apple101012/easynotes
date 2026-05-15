@@ -465,6 +465,48 @@ function createChecklistItem({ checked = false, text = '' } = {}) {
     updateChecklistSource();
   });
 
+  function getCaretOffset() {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || !content.contains(selection.anchorNode)) {
+      return content.textContent.length;
+    }
+
+    const range = selection.getRangeAt(0).cloneRange();
+    range.selectNodeContents(content);
+    range.setEnd(selection.anchorNode, selection.anchorOffset);
+    return range.toString().length;
+  }
+
+  function setCaretOffset(target, offset) {
+    target.focus();
+    if (!target.firstChild) {
+      target.append(document.createTextNode(''));
+    }
+    const textNode = target.firstChild;
+
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.setStart(textNode, Math.min(offset, textNode.textContent.length));
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  function focusNeighbor(direction, edgeOnly = false) {
+    const offset = getCaretOffset();
+    const atStart = offset === 0;
+    const atEnd = offset === content.textContent.length;
+    if (edgeOnly && direction < 0 && !atStart) return false;
+    if (edgeOnly && direction > 0 && !atEnd) return false;
+
+    const neighbor = direction < 0 ? item.previousElementSibling : item.nextElementSibling;
+    const neighborText = neighbor?.querySelector('.checklist-text');
+    if (!neighborText) return false;
+
+    setCaretOffset(neighborText, edgeOnly && direction < 0 ? neighborText.textContent.length : offset);
+    return true;
+  }
+
   content.addEventListener('input', updateChecklistSource);
   content.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.ctrlKey && !e.altKey && !e.metaKey) {
@@ -489,6 +531,26 @@ function createChecklistItem({ checked = false, text = '' } = {}) {
       item.remove();
       focusTarget?.querySelector('.checklist-text')?.focus();
       updateChecklistSource();
+      return;
+    }
+
+    if (e.key === 'ArrowUp' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (focusNeighbor(-1)) e.preventDefault();
+      return;
+    }
+
+    if (e.key === 'ArrowDown' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (focusNeighbor(1)) e.preventDefault();
+      return;
+    }
+
+    if (e.key === 'ArrowLeft' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (focusNeighbor(-1, true)) e.preventDefault();
+      return;
+    }
+
+    if (e.key === 'ArrowRight' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (focusNeighbor(1, true)) e.preventDefault();
     }
   });
 
