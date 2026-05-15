@@ -10,7 +10,7 @@ Core features:
 - System tray Show, Hide, and Quit
 - Always-on-top compact note window
 - Autosave
-- Checklist mode from typing list or todo at the top of a note
+- Formatted checklist mode from typing list or todo at the top of a note, with round check bubbles and strikethrough checked items
 - Stack-style note navigation
 - Empty note cleanup
 - Configurable note switching shortcuts

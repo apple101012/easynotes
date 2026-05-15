@@ -37,6 +37,7 @@ const pressedModifiers = {
 // ── DOM ──
 const canvas = document.getElementById('note-canvas');
 const container = document.getElementById('canvas-container');
+const checklistView = document.getElementById('checklist-view');
 const indicator = document.getElementById('note-indicator');
 const settingsButton = document.getElementById('btn-settings');
 const settingsPanel = document.getElementById('settings-panel');
@@ -352,6 +353,7 @@ async function loadNotes() {
 function renderCurrentNote(animate) {
   if (animate) return; // animated transitions handle their own rendering
   canvas.value = notes[currentIndex]?.content || '';
+  renderChecklistView();
   updateIndicator();
 }
 
@@ -391,6 +393,11 @@ function scheduleSave() {
   undoManager.activity();
 }
 
+function scheduleChecklistSave() {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => saveCurrentNote(), 300);
+}
+
 // ── Checklist mode ──
 
 const LIST_UNCHECKED = '[ ] ';
@@ -409,6 +416,104 @@ function isChecklistNote() {
   return canvas.value.split('\n').some((line) => isChecklistLine(line));
 }
 
+function parseChecklistItems() {
+  return canvas.value.split('\n').map((line) => {
+    if (line.startsWith(LIST_CHECKED)) {
+      return { checked: true, text: line.slice(LIST_CHECKED.length) };
+    }
+    if (line.startsWith(LIST_UNCHECKED)) {
+      return { checked: false, text: line.slice(LIST_UNCHECKED.length) };
+    }
+    return { checked: false, text: line };
+  });
+}
+
+function serializeChecklistItems() {
+  return [...checklistView.querySelectorAll('.checklist-item')]
+    .map((item) => {
+      const checked = item.classList.contains('checked');
+      const text = item.querySelector('.checklist-text')?.textContent || '';
+      return `${checked ? LIST_CHECKED : LIST_UNCHECKED}${text}`;
+    })
+    .join('\n');
+}
+
+function updateChecklistSource() {
+  canvas.value = serializeChecklistItems();
+  notes[currentIndex].content = canvas.value;
+  scheduleChecklistSave();
+}
+
+function createChecklistItem({ checked = false, text = '' } = {}) {
+  const item = document.createElement('div');
+  item.className = `checklist-item${checked ? ' checked' : ''}`;
+
+  const toggle = document.createElement('button');
+  toggle.className = 'checklist-toggle';
+  toggle.type = 'button';
+  toggle.setAttribute('aria-label', checked ? 'Mark incomplete' : 'Mark complete');
+
+  const content = document.createElement('div');
+  content.className = 'checklist-text';
+  content.contentEditable = 'true';
+  content.spellcheck = false;
+  content.textContent = text;
+
+  toggle.addEventListener('click', () => {
+    item.classList.toggle('checked');
+    toggle.setAttribute('aria-label', item.classList.contains('checked') ? 'Mark incomplete' : 'Mark complete');
+    updateChecklistSource();
+  });
+
+  content.addEventListener('input', updateChecklistSource);
+  content.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.ctrlKey && !e.altKey && !e.metaKey) {
+      e.preventDefault();
+      item.classList.toggle('checked');
+      updateChecklistSource();
+      return;
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const next = createChecklistItem();
+      item.after(next);
+      next.querySelector('.checklist-text').focus();
+      updateChecklistSource();
+      return;
+    }
+
+    if (e.key === 'Backspace' && content.textContent === '' && checklistView.children.length > 1) {
+      e.preventDefault();
+      const focusTarget = item.previousElementSibling || item.nextElementSibling;
+      item.remove();
+      focusTarget?.querySelector('.checklist-text')?.focus();
+      updateChecklistSource();
+    }
+  });
+
+  item.append(toggle, content);
+  return item;
+}
+
+function renderChecklistView({ focusFirst = false } = {}) {
+  const checklistMode = isChecklistNote();
+  canvas.classList.toggle('hidden', checklistMode);
+  checklistView.classList.toggle('hidden', !checklistMode);
+  container.classList.toggle('checklist-active', checklistMode);
+
+  if (!checklistMode) {
+    checklistView.innerHTML = '';
+    return;
+  }
+
+  const items = parseChecklistItems();
+  checklistView.replaceChildren(...items.map((item) => createChecklistItem(item)));
+  if (focusFirst) {
+    checklistView.querySelector('.checklist-text')?.focus();
+  }
+}
+
 function getLineRange(position) {
   const value = canvas.value;
   const start = value.lastIndexOf('\n', Math.max(0, position - 1)) + 1;
@@ -421,6 +526,7 @@ function setCanvasValue(value, selectionStart, selectionEnd = selectionStart) {
   canvas.value = value;
   canvas.selectionStart = selectionStart;
   canvas.selectionEnd = selectionEnd;
+  renderChecklistView();
   scheduleSave();
 }
 
@@ -451,7 +557,9 @@ function handleChecklistEnter(e) {
   if (isListTrigger(text)) {
     e.preventDefault();
     const value = canvas.value.slice(0, start) + LIST_UNCHECKED + canvas.value.slice(end);
-    setCanvasValue(value, start + LIST_UNCHECKED.length);
+    canvas.value = value;
+    renderChecklistView({ focusFirst: true });
+    scheduleSave();
     return true;
   }
 
@@ -498,6 +606,7 @@ function animateSwap(outClass, inClass, newContent) {
     setTimeout(() => {
       canvas.value = newContent;
       canvas.scrollTop = 0;
+      renderChecklistView();
 
       canvas.classList.remove(outClass);
       canvas.classList.add(inClass);
