@@ -391,6 +391,98 @@ function scheduleSave() {
   undoManager.activity();
 }
 
+// ── Checklist mode ──
+
+const LIST_UNCHECKED = '[ ] ';
+const LIST_CHECKED = '[x] ';
+
+function isListTrigger(text) {
+  const value = text.trim().toLowerCase();
+  return value === 'list' || value === 'todo';
+}
+
+function isChecklistLine(line) {
+  return line.startsWith(LIST_UNCHECKED) || line.startsWith(LIST_CHECKED);
+}
+
+function isChecklistNote() {
+  return canvas.value.split('\n').some((line) => isChecklistLine(line));
+}
+
+function getLineRange(position) {
+  const value = canvas.value;
+  const start = value.lastIndexOf('\n', Math.max(0, position - 1)) + 1;
+  const nextBreak = value.indexOf('\n', position);
+  const end = nextBreak === -1 ? value.length : nextBreak;
+  return { start, end, text: value.slice(start, end) };
+}
+
+function setCanvasValue(value, selectionStart, selectionEnd = selectionStart) {
+  canvas.value = value;
+  canvas.selectionStart = selectionStart;
+  canvas.selectionEnd = selectionEnd;
+  scheduleSave();
+}
+
+function insertAtSelection(text) {
+  const start = canvas.selectionStart;
+  const end = canvas.selectionEnd;
+  const value = canvas.value;
+  setCanvasValue(value.slice(0, start) + text + value.slice(end), start + text.length);
+}
+
+function normalizePastedChecklistTrigger() {
+  const lines = canvas.value.split('\n');
+  if (lines.length <= 1 || !isListTrigger(lines[0])) return false;
+
+  const converted = lines.slice(1).map((line) => {
+    if (isChecklistLine(line)) return line;
+    return `${LIST_UNCHECKED}${line}`;
+  });
+  const value = converted.join('\n');
+  setCanvasValue(value, value.length);
+  return true;
+}
+
+function handleChecklistEnter(e) {
+  if (e.key !== 'Enter' || e.altKey || e.ctrlKey || e.metaKey) return false;
+
+  const { start, end, text } = getLineRange(canvas.selectionStart);
+  if (isListTrigger(text)) {
+    e.preventDefault();
+    const value = canvas.value.slice(0, start) + LIST_UNCHECKED + canvas.value.slice(end);
+    setCanvasValue(value, start + LIST_UNCHECKED.length);
+    return true;
+  }
+
+  if (isChecklistNote() || isChecklistLine(text)) {
+    e.preventDefault();
+    insertAtSelection(`\n${LIST_UNCHECKED}`);
+    return true;
+  }
+
+  return false;
+}
+
+function toggleCurrentChecklistLine() {
+  const range = getLineRange(canvas.selectionStart);
+  const value = canvas.value;
+  let replacement = null;
+
+  if (range.text.startsWith(LIST_UNCHECKED)) {
+    replacement = LIST_CHECKED + range.text.slice(LIST_UNCHECKED.length);
+  } else if (range.text.startsWith(LIST_CHECKED)) {
+    replacement = LIST_UNCHECKED + range.text.slice(LIST_CHECKED.length);
+  }
+
+  if (!replacement) return false;
+
+  const nextValue = value.slice(0, range.start) + replacement + value.slice(range.end);
+  const cursorOffset = Math.max(0, canvas.selectionStart - range.start);
+  setCanvasValue(nextValue, range.start + cursorOffset);
+  return true;
+}
+
 // ── Animation helper ──
 
 function prepareForNoteSwitch(newNoteId) {
@@ -617,8 +709,21 @@ window.addEventListener('DOMContentLoaded', () => {
     getNoteId:          () => notes[currentIndex]?.id ?? null
   });
 
-  canvas.addEventListener('input', scheduleSave);
+  canvas.addEventListener('input', () => {
+    if (!normalizePastedChecklistTrigger()) scheduleSave();
+  });
   canvas.addEventListener('beforeinput', () => undoManager.beforeInput());
+  canvas.addEventListener('keydown', (e) => {
+    if (handleChecklistEnter(e)) return;
+    if (e.key === 'Enter' && e.ctrlKey && !e.altKey && !e.metaKey) {
+      e.preventDefault();
+      toggleCurrentChecklistLine();
+    }
+  });
+  canvas.addEventListener('click', (e) => {
+    if (e.offsetX > 42) return;
+    toggleCurrentChecklistLine();
+  });
 
   settingsButton?.addEventListener('mousedown', (e) => {
     e.stopPropagation();

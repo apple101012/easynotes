@@ -12,6 +12,7 @@ EasyNotes is an independent open-source project and is not affiliated with Antin
 - System tray persistence with Show, Hide, and Quit
 - Always-on-top compact note window
 - Autosave while typing
+- Checklist mode: type `list` or `todo` at the top of a note and press Enter
 - Stack-style note navigation
 - Empty notes are cleaned up when you move away from them
 - Configurable shortcuts for show/hide, previous note, and next note
@@ -29,6 +30,7 @@ EasyNotes is an independent open-source project and is not affiliated with Antin
 - Legacy next note: `Ctrl+Shift+]`
 - Mouse4/back: previous note
 - Mouse5/forward: next note
+- Checklist toggle: click the `[ ]` / `[x]` marker area or press `Ctrl+Enter`
 
 Note navigation shortcuts can distinguish side-specific modifiers such as `LeftCtrl`, `RightCtrl`, `LeftShift`, and `RightShift`. The global show/hide shortcut uses the operating system global hotkey API, so Control/Alt modifiers are treated generically there.
 
