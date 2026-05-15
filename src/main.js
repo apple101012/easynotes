@@ -23,6 +23,7 @@ let undoManager = null;
 let previousNoteShortcut = 'Ctrl+Shift+ArrowLeft';
 let nextNoteShortcut = 'Ctrl+Shift+ArrowRight';
 let mouseNoteButtonsEnabled = true;
+let checklistSelectionMode = false;
 const pressedModifiers = {
   ControlLeft: false,
   ControlRight: false,
@@ -524,6 +525,57 @@ function selectEntireChecklist() {
   range.selectNodeContents(checklistView);
   selection.removeAllRanges();
   selection.addRange(range);
+  checklistSelectionMode = true;
+}
+
+function clearChecklistNote() {
+  replaceChecklistSelection('');
+}
+
+function replaceChecklistSelection(text) {
+  checklistSelectionMode = false;
+  canvas.value = text;
+  notes[currentIndex].content = text;
+  renderChecklistView();
+  canvas.focus();
+  canvas.selectionStart = text.length;
+  canvas.selectionEnd = text.length;
+  scheduleSave();
+}
+
+function isChecklistSelectionActive() {
+  const selection = window.getSelection();
+  if (!checklistSelectionMode || !selection || selection.rangeCount === 0 || selection.isCollapsed) return false;
+
+  const range = selection.getRangeAt(0);
+  return checklistView.contains(range.commonAncestorContainer) || range.commonAncestorContainer === checklistView;
+}
+
+function handleChecklistDocumentKeydown(e) {
+  if (!isChecklistNote() || checklistView.classList.contains('hidden')) return false;
+
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+    const activeElement = document.activeElement;
+    if (activeElement === checklistView || checklistView.contains(activeElement)) {
+      e.preventDefault();
+      selectEntireChecklist();
+      return true;
+    }
+  }
+
+  if ((e.key === 'Backspace' || e.key === 'Delete') && isChecklistSelectionActive()) {
+    e.preventDefault();
+    clearChecklistNote();
+    return true;
+  }
+
+  if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && isChecklistSelectionActive()) {
+    e.preventDefault();
+    replaceChecklistSelection(e.key);
+    return true;
+  }
+
+  return false;
 }
 
 function createChecklistMarker(markerText) {
@@ -538,6 +590,7 @@ function createChecklistMarker(markerText) {
   marker.setAttribute('aria-label', 'List marker');
 
   marker.addEventListener('input', () => {
+    checklistSelectionMode = false;
     const value = marker.textContent.trim();
     if (!isListTrigger(value)) {
       disableChecklistMode(value);
@@ -617,7 +670,10 @@ function createChecklistItem({ checked = false, text = '' } = {}) {
     return true;
   }
 
-  content.addEventListener('input', updateChecklistSource);
+  content.addEventListener('input', () => {
+    checklistSelectionMode = false;
+    updateChecklistSource();
+  });
   content.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
       e.preventDefault();
@@ -936,6 +992,10 @@ document.addEventListener('copy', (e) => {
   e.preventDefault();
   e.clipboardData.setData('text/plain', canvas.value);
 });
+document.addEventListener('selectionchange', () => {
+  if (!checklistSelectionMode) return;
+  if (!isChecklistSelectionActive()) checklistSelectionMode = false;
+});
 
 // ── Keyboard shortcuts ──
 
@@ -943,6 +1003,8 @@ document.addEventListener('keydown', (e) => {
   if (Object.prototype.hasOwnProperty.call(pressedModifiers, e.code)) {
     pressedModifiers[e.code] = true;
   }
+
+  if (handleChecklistDocumentKeydown(e)) return;
 
   const mod = e.metaKey || e.ctrlKey;
 
